@@ -1,0 +1,12 @@
+{
+  "iarvsc.iarInstallDirectories": ["C:\\Program Files\\IAR Systems"],
+  "files.associations": {
+    "*.h": "c"
+  },
+  "workbench.colorCustomizations": {
+    "titleBar.activeBackground": "#910000",
+    "titleBar.activeForeground": "#cecece",
+    "titleBar.inactiveBackground": "#6b0000",
+    "titleBar.inactiveForeground": "#cecece"
+  }
+}
