@@ -637,7 +637,7 @@
                 </option>
                 <option>
                     <name>OOCOutputFile</name>
-                    <state>Laboratorio04.bin</state>
+                    <state>Laboratorio_04.bin</state>
                 </option>
                 <option>
                     <name>OOCCommandLineProducer</name>
@@ -684,7 +684,7 @@
                 </option>
                 <option>
                     <name>IlinkOutputFile</name>
-                    <state>Laboratorio04.out</state>
+                    <state>Laboratorio_04.out</state>
                 </option>
                 <option>
                     <name>IlinkDebugInfoEnable</name>
@@ -981,7 +981,7 @@
                 </option>
                 <option>
                     <name>IlinkTrustzoneImportLibraryOut</name>
-                    <state>Laboratorio04_import_lib.o</state>
+                    <state>Laboratorio_04_import_lib.o</state>
                 </option>
                 <option>
                     <name>OILinkExtraOption</name>
