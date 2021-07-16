@@ -4,20 +4,9 @@
 
 osThreadId_t thread1_id, thread2_id;
 
-void thread1(void *arg)
+void thread(void *arg)
 {
-  uint8_t state = 0;
-
-  while (1)
-  {
-    state ^= LED1;
-    LEDWrite(LED1, state);
-    osDelay(100);
-  } // while
-} // thread1
-
-void thread2(void *arg)
-{
+  uint8_t led = (uint32_t)arg;
   uint8_t state = 0;
   uint32_t tick;
 
@@ -25,12 +14,12 @@ void thread2(void *arg)
   {
     tick = osKernelGetTickCount();
 
-    state ^= LED2;
-    LEDWrite(LED2, state);
+    state ^= led;
+    LEDWrite(led, state);
 
     osDelayUntil(tick + 100);
-  } // while
-} // thread2
+  }
+}
 
 void main(void)
 {
@@ -38,8 +27,8 @@ void main(void)
 
   osKernelInitialize();
 
-  thread1_id = osThreadNew(thread1, NULL, NULL);
-  thread2_id = osThreadNew(thread2, NULL, NULL);
+  thread1_id = osThreadNew(thread, (void *)LED1, NULL);
+  thread2_id = osThreadNew(thread, (void *)LED2, NULL);
 
   if (osKernelGetState() == osKernelReady)
     osKernelStart();
