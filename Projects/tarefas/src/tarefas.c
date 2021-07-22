@@ -9,14 +9,14 @@ void thread1(void *arg) {
   uint8_t state = 0;
   uint32_t tick;
   while (1) {
-    osMutexAcquire(mutex1_id, osWaitForever);
+    osMutexAcquire(mutex2_id, osWaitForever);
     tick = osKernelGetTickCount();
     state ^= LED1;
-    osMutexAcquire(mutex2_id, osWaitForever);
+    osMutexAcquire(mutex1_id, osWaitForever);
     LEDWrite(LED1, state);
-    osMutexRelease(mutex2_id);
-    osDelayUntil(tick + 100);
     osMutexRelease(mutex1_id);
+    osDelayUntil(tick + 100);
+    osMutexRelease(mutex2_id);
   }
 }
 
@@ -32,8 +32,8 @@ void thread2(void *arg) {
     osMutexRelease(mutex1_id);
     osDelayUntil(tick + 100);
     osMutexRelease(mutex2_id);
-  }  // while
-}  // thread2
+  }
+}
 
 void main(void) {
   LEDInit(LED2 | LED1);
