@@ -1,22 +1,22 @@
-#include "system_tm4c1294.h" // CMSIS-Core
-#include "driverleds.h" // device drivers
-#include "cmsis_os2.h" // CMSIS-RTOS
+#include "cmsis_os2.h"        // CMSIS-RTOS
+#include "driverleds.h"       // device drivers
+#include "system_tm4c1294.h"  // CMSIS-Core
 
 uint8_t state = 0;
 osTimerId_t timer1_id;
 osThreadId_t app_main_id;
 
-void callback(void *arg){
+void callback(void *arg) {
   state ^= LED1;
   LEDWrite(LED1, state);
-} // callback
+}  // callback
 
-void app_main(void *arg){
+void app_main(void *arg) {
   osTimerStart(timer1_id, 100);
   osDelay(osWaitForever);
-} // app_main
+}  // app_main
 
-void main(void){
+void main(void) {
   SystemInit();
   LEDInit(LED1);
 
@@ -25,8 +25,8 @@ void main(void){
   app_main_id = osThreadNew(app_main, NULL, NULL);
   timer1_id = osTimerNew(callback, osTimerPeriodic, NULL, NULL);
 
-  if(osKernelGetState() == osKernelReady)
-    osKernelStart();
+  if (osKernelGetState() == osKernelReady) osKernelStart();
 
-  while(1);
-} // main
+  while (1)
+    ;
+}  // main

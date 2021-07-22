@@ -1,4 +1,4 @@
-/* -------------------------------------------------------------------------- 
+/* --------------------------------------------------------------------------
  * Copyright (c) 2013-2016 ARM Limited. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -20,29 +20,29 @@
  *
  *---------------------------------------------------------------------------*/
 
-#include "driverleds.h" // device drivers
-#include "cmsis_os2.h" // CMSIS-RTOS
+#include "cmsis_os2.h"   // CMSIS-RTOS
+#include "driverleds.h"  // device drivers
 
-osThreadId_t tid_phaseA;                /* Thread id of thread: phase_a      */
-osThreadId_t tid_phaseB;                /* Thread id of thread: phase_b      */
-osThreadId_t tid_phaseC;                /* Thread id of thread: phase_c      */
-osThreadId_t tid_phaseD;                /* Thread id of thread: phase_d      */
-osThreadId_t tid_clock;                 /* Thread id of thread: clock        */
+osThreadId_t tid_phaseA; /* Thread id of thread: phase_a      */
+osThreadId_t tid_phaseB; /* Thread id of thread: phase_b      */
+osThreadId_t tid_phaseC; /* Thread id of thread: phase_c      */
+osThreadId_t tid_phaseD; /* Thread id of thread: phase_d      */
+osThreadId_t tid_clock;  /* Thread id of thread: clock        */
 
 osMutexId_t phases_mut_id;
 
 const osMutexAttr_t Phases_Mutex_attr = {
-  "PhasesMutex",                            // human readable mutex name
-  osMutexRecursive | osMutexPrioInherit,    // attr_bits
-  NULL,                                     // memory for control block   
-  0U                                        // size for control block
-  };
+    "PhasesMutex",                          // human readable mutex name
+    osMutexRecursive | osMutexPrioInherit,  // attr_bits
+    NULL,                                   // memory for control block
+    0U                                      // size for control block
+};
 
 /*----------------------------------------------------------------------------
  *      Switch LED on
  *---------------------------------------------------------------------------*/
-void Switch_On (unsigned char led) {
-  osMutexAcquire(phases_mut_id, osWaitForever); // try to acquire mutex
+void Switch_On(unsigned char led) {
+  osMutexAcquire(phases_mut_id, osWaitForever);  // try to acquire mutex
   LEDOn(led);
   osMutexRelease(phases_mut_id);
 }
@@ -50,33 +50,33 @@ void Switch_On (unsigned char led) {
 /*----------------------------------------------------------------------------
  *      Switch LED off
  *---------------------------------------------------------------------------*/
-void Switch_Off (unsigned char led) {
-  osMutexAcquire(phases_mut_id, osWaitForever); // try to acquire mutex
+void Switch_Off(unsigned char led) {
+  osMutexAcquire(phases_mut_id, osWaitForever);  // try to acquire mutex
   LEDOff(led);
   osMutexRelease(phases_mut_id);
 }
 
-
 /*----------------------------------------------------------------------------
  *      Function 'signal_func' called from multiple threads
  *---------------------------------------------------------------------------*/
-void signal_func (osThreadId_t tid)  {
-  osThreadFlagsSet(tid_clock, 0x0100);      /* set signal to clock thread    */
-  osDelay(500);                             /* delay 500ms                   */
-  osThreadFlagsSet(tid_clock, 0x0100);      /* set signal to clock thread    */
-  osDelay(500);                             /* delay 500ms                   */
-  osThreadFlagsSet(tid, 0x0001);            /* set signal to thread 'thread' */
-  osDelay(500);                             /* delay 500ms                   */
+void signal_func(osThreadId_t tid) {
+  osThreadFlagsSet(tid_clock, 0x0100); /* set signal to clock thread    */
+  osDelay(500);                        /* delay 500ms                   */
+  osThreadFlagsSet(tid_clock, 0x0100); /* set signal to clock thread    */
+  osDelay(500);                        /* delay 500ms                   */
+  osThreadFlagsSet(tid, 0x0001);       /* set signal to thread 'thread' */
+  osDelay(500);                        /* delay 500ms                   */
 }
 
 /*----------------------------------------------------------------------------
  *      Thread 1 'phaseA': Phase A output
  *---------------------------------------------------------------------------*/
-void phaseA (void *argument) {
+void phaseA(void *argument) {
   for (;;) {
-    osThreadFlagsWait(0x0001, osFlagsWaitAny ,osWaitForever);    /* wait for an event flag 0x0001 */
+    osThreadFlagsWait(0x0001, osFlagsWaitAny,
+                      osWaitForever); /* wait for an event flag 0x0001 */
     Switch_On(LED1);
-    signal_func(tid_phaseB);                                     /* call common signal function   */
+    signal_func(tid_phaseB); /* call common signal function   */
     Switch_Off(LED1);
   }
 }
@@ -84,11 +84,12 @@ void phaseA (void *argument) {
 /*----------------------------------------------------------------------------
  *      Thread 2 'phaseB': Phase B output
  *---------------------------------------------------------------------------*/
-void phaseB (void *argument) {
+void phaseB(void *argument) {
   for (;;) {
-    osThreadFlagsWait(0x0001, osFlagsWaitAny, osWaitForever);    /* wait for an event flag 0x0001 */
+    osThreadFlagsWait(0x0001, osFlagsWaitAny,
+                      osWaitForever); /* wait for an event flag 0x0001 */
     Switch_On(LED2);
-    signal_func(tid_phaseC);                /* call common signal function   */
+    signal_func(tid_phaseC); /* call common signal function   */
     Switch_Off(LED2);
   }
 }
@@ -96,11 +97,12 @@ void phaseB (void *argument) {
 /*----------------------------------------------------------------------------
  *      Thread 3 'phaseC': Phase C output
  *---------------------------------------------------------------------------*/
-void phaseC (void *argument) {
+void phaseC(void *argument) {
   for (;;) {
-    osThreadFlagsWait(0x0001, osFlagsWaitAny, osWaitForever);    /* wait for an event flag 0x0001 */
+    osThreadFlagsWait(0x0001, osFlagsWaitAny,
+                      osWaitForever); /* wait for an event flag 0x0001 */
     Switch_On(LED3);
-    signal_func(tid_phaseD);                /* call common signal function   */
+    signal_func(tid_phaseD); /* call common signal function   */
     Switch_Off(LED3);
   }
 }
@@ -108,11 +110,12 @@ void phaseC (void *argument) {
 /*----------------------------------------------------------------------------
  *      Thread 4 'phaseD': Phase D output
  *---------------------------------------------------------------------------*/
-void phaseD (void *argument) {
+void phaseD(void *argument) {
   for (;;) {
-    osThreadFlagsWait(0x0001, osFlagsWaitAny, osWaitForever);    /* wait for an event flag 0x0001 */
+    osThreadFlagsWait(0x0001, osFlagsWaitAny,
+                      osWaitForever); /* wait for an event flag 0x0001 */
     Switch_On(LED4);
-    signal_func(tid_phaseA);                /* call common signal function   */
+    signal_func(tid_phaseA); /* call common signal function   */
     Switch_Off(LED4);
   }
 }
@@ -120,42 +123,45 @@ void phaseD (void *argument) {
 /*----------------------------------------------------------------------------
  *      Thread 5 'clock': Signal Clock
  *---------------------------------------------------------------------------*/
-void clock (void *argument) {
+void clock(void *argument) {
   static uint32_t count = 0;
   for (;;) {
-    osThreadFlagsWait(0x0100, osFlagsWaitAny, osWaitForever);    /* wait for an event flag 0x0100 */
+    osThreadFlagsWait(0x0100, osFlagsWaitAny,
+                      osWaitForever); /* wait for an event flag 0x0100 */
     count++;
-    osDelay(80);                            /* delay  80ms                   */
+    osDelay(80); /* delay  80ms                   */
   }
 }
 
 /*----------------------------------------------------------------------------
  *      Main: Initialize and start RTX Kernel
  *---------------------------------------------------------------------------*/
-void app_main (void *argument) {
+void app_main(void *argument) {
   tid_phaseA = osThreadNew(phaseA, NULL, NULL);
   tid_phaseB = osThreadNew(phaseB, NULL, NULL);
   tid_phaseC = osThreadNew(phaseC, NULL, NULL);
   tid_phaseD = osThreadNew(phaseD, NULL, NULL);
-  tid_clock  = osThreadNew(clock,  NULL, NULL);
+  tid_clock = osThreadNew(clock, NULL, NULL);
 
   phases_mut_id = osMutexNew(&Phases_Mutex_attr);
-  
-  osThreadFlagsSet(tid_phaseA, 0x0001);          /* set signal to phaseA thread   */
+
+  osThreadFlagsSet(tid_phaseA, 0x0001); /* set signal to phaseA thread   */
 
   osDelay(osWaitForever);
-  while(1);
+  while (1)
+    ;
 }
 
-int main (void) {
+int main(void) {
   // System Initialization
   LEDInit(LED4 | LED3 | LED2 | LED1);
 
-  osKernelInitialize();                 // Initialize CMSIS-RTOS
-  osThreadNew(app_main, NULL, NULL);    // Create application main thread
+  osKernelInitialize();               // Initialize CMSIS-RTOS
+  osThreadNew(app_main, NULL, NULL);  // Create application main thread
   if (osKernelGetState() == osKernelReady) {
-    osKernelStart();                    // Start thread execution
+    osKernelStart();  // Start thread execution
   }
 
-  while(1);
+  while (1)
+    ;
 }
