@@ -3,34 +3,35 @@
 #include "system_tm4c1294.h"  // CMSIS-Core
 
 osThreadId_t thread1_id, thread2_id;
-osMutexId_t led_mutex_id;
+osMutexId_t mutex1_id, mutex2_id;
 
 void thread1(void *arg) {
   uint8_t state = 0;
-
+  uint32_t tick;
   while (1) {
-    osMutexAcquire(led_mutex_id, osWaitForever);
+    osMutexAcquire(mutex1_id, osWaitForever);
+    tick = osKernelGetTickCount();
     state ^= LED1;
+    osMutexAcquire(mutex2_id, osWaitForever);
     LEDWrite(LED1, state);
-    osMutexRelease(led_mutex_id);
-    osDelay(100);
-  }  // while
-}  // thread1
+    osMutexRelease(mutex2_id);
+    osDelayUntil(tick + 100);
+    osMutexRelease(mutex1_id);
+  }
+}
 
 void thread2(void *arg) {
   uint8_t state = 0;
   uint32_t tick;
-
   while (1) {
+    osMutexAcquire(mutex2_id, osWaitForever);
     tick = osKernelGetTickCount();
-
-    osMutexAcquire(led_mutex_id, osWaitForever);
-
     state ^= LED2;
+    osMutexAcquire(mutex1_id, osWaitForever);
     LEDWrite(LED2, state);
-    osMutexRelease(led_mutex_id);
-
+    osMutexRelease(mutex1_id);
     osDelayUntil(tick + 100);
+    osMutexRelease(mutex2_id);
   }  // while
 }  // thread2
 
