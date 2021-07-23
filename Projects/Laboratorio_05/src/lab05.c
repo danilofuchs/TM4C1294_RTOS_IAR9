@@ -4,33 +4,47 @@
 #include "system_tm4c1294.h"  // CMSIS-Core
 
 #define BUFFER_SIZE 8
-#define BUFFER_INDEX count % BUFFER_SIZE
+#define DONT_WAIT 0
 
+// Circular buffer to hold generated items
+typedef struct {
+  uint8_t items[BUFFER_SIZE];
+  uint8_t index;
+} circular_buffer_t;
+
+void circularBufferAddItem(circular_buffer_t* buffer, uint8_t item) {
+  buffer->items[buffer->index] = item;
+  buffer->index = (buffer->index + 1) % BUFFER_SIZE;
+}
+uint8_t circularBufferGetItem(circular_buffer_t* buffer) {
+  return buffer->items[buffer->index];
+}
+
+circular_buffer_t buffer;
+
+// Semaphores to synchronize the ISR with the consumer thread
 osSemaphoreId_t empty_slots_id, full_slots_id;
+
 osThreadId_t consumer_id;
 
-uint8_t buffer[BUFFER_SIZE];
 uint8_t count = 0;
-
 void GPIOJ_Handler(void) {
   ButtonIntClear(USW1);
   count++;
-  osSemaphoreAcquire(empty_slots_id, osWaitForever);
-  buffer[BUFFER_INDEX] = count;
+  osSemaphoreAcquire(empty_slots_id, DONT_WAIT);
+  circularBufferAddItem(&buffer, count);
   osSemaphoreRelease(full_slots_id);
 }
 
-osThreadId_t thread1_id, thread2_id, thread3_id, thread4_id;
-
-void consumer(void *arg) {
+void consumer(void* arg) {
   while (1) {
     osSemaphoreAcquire(full_slots_id, osWaitForever);
-    uint8_t state = buffer[BUFFER_INDEX];
+    uint8_t item = circularBufferGetItem(&buffer);
     osSemaphoreRelease(empty_slots_id);
 
-    LEDWrite(LED4 | LED3 | LED2 | LED1, state);
+    LEDWrite(LED4 | LED3 | LED2 | LED1, item);
 
-    osDelay(50);
+    osDelay(500);
   }
 }
 
