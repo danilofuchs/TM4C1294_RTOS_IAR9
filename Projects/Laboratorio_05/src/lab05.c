@@ -1,43 +1,52 @@
 #include "cmsis_os2.h"        // CMSIS-RTOS
+#include "driverbuttons.h"    // device drivers
 #include "driverleds.h"       // device drivers
 #include "system_tm4c1294.h"  // CMSIS-Core
 
+#define BUFFER_SIZE 8
+#define BUFFER_INDEX count % BUFFER_SIZE
+
+osSemaphoreId_t empty_slots_id, full_slots_id;
+osThreadId_t consumer_id;
+
+uint8_t buffer[BUFFER_SIZE];
+uint8_t count = 0;
+
+void GPIOJ_Handler(void) {
+  ButtonIntClear(USW1);
+  count++;
+  osSemaphoreAcquire(empty_slots_id, osWaitForever);
+  buffer[BUFFER_INDEX] = count;
+  osSemaphoreRelease(full_slots_id);
+}
+
 osThreadId_t thread1_id, thread2_id, thread3_id, thread4_id;
 
-typedef struct {
-  uint8_t led;
-  uint32_t period;
-} thread_arg_t;
-
-void blink_thread(void *arg_ptr) {
-  thread_arg_t *arg = (thread_arg_t *)arg_ptr;
-  uint8_t state = 0;
-  uint32_t tick;
-
+void consumer(void *arg) {
   while (1) {
-    tick = osKernelGetTickCount();
+    osSemaphoreAcquire(full_slots_id, osWaitForever);
+    uint8_t state = buffer[BUFFER_INDEX];
+    osSemaphoreRelease(empty_slots_id);
 
-    state ^= arg->led;
-    LEDWrite(arg->led, state);
+    LEDWrite(LED4 | LED3 | LED2 | LED1, state);
 
-    osDelayUntil(tick + arg->period);
+    osDelay(50);
   }
 }
 
 void main(void) {
   LEDInit(LED1 | LED2 | LED3 | LED4);
+  ButtonInit(USW1);
+  ButtonIntEnable(USW1);
 
   osKernelInitialize();
 
-  thread_arg_t thread1_arg = {.led = LED1, .period = 200};
-  thread_arg_t thread2_arg = {.led = LED2, .period = 300};
-  thread_arg_t thread3_arg = {.led = LED3, .period = 500};
-  thread_arg_t thread4_arg = {.led = LED4, .period = 700};
+  consumer_id = osThreadNew(consumer, NULL, NULL);
 
-  thread1_id = osThreadNew(blink_thread, (void *)&thread1_arg, NULL);
-  thread2_id = osThreadNew(blink_thread, (void *)&thread2_arg, NULL);
-  thread3_id = osThreadNew(blink_thread, (void *)&thread3_arg, NULL);
-  thread4_id = osThreadNew(blink_thread, (void *)&thread4_arg, NULL);
+  // BUFFER_SIZE empty slots
+  empty_slots_id = osSemaphoreNew(BUFFER_SIZE, BUFFER_SIZE, NULL);
+  // 0 full slots
+  full_slots_id = osSemaphoreNew(BUFFER_SIZE, 0, NULL);
 
   if (osKernelGetState() == osKernelReady) osKernelStart();
 
