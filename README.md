@@ -12,3 +12,5 @@ This is a continuation of [danilofuchs/TM4C1294_Bare_IAR9](https://github.com/da
 This is continued at [danilofuchs/TM4C1294_RTOS_IAR9](https://github.com/danilofuchs/TM4C1294_RTOS_IAR9/)
 
 - [Lab 04](./Projects/Laboratorio_04) - Blinking LEDs using threads, each with their own period
+- [Lab 05](./Projects/Laboratorio_05) - Concurrent program. On user click, increment
+  a counter and add its value to a circular buffer, display it on builtin LEDs
