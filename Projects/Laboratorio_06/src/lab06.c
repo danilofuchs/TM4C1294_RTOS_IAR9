@@ -3,59 +3,41 @@
 #include "driverleds.h"       // device drivers
 #include "system_tm4c1294.h"  // CMSIS-Core
 
-#define BUFFER_SIZE 8
-#define MAX_COUNT 16
-#define DONT_WAIT 0
+osThreadId_t controller_thread_id;
+osThreadId_t pwm_thread_ids[4];
 
-// Circular buffer to hold generated items
-uint8_t buffer[BUFFER_SIZE];
+// void GPIOJ_Handler(void) { ButtonIntClear(USW1); }
 
-// Semaphores to synchronize the ISR with the consumer thread
-osSemaphoreId_t empty_slots_id, full_slots_id;
-
-osThreadId_t consumer_id;
-
-uint8_t count, index = 0;
-void GPIOJ_Handler(void) {
-  ButtonIntClear(USW1);
-  count = (count + 1) % MAX_COUNT;
-  osSemaphoreAcquire(empty_slots_id, DONT_WAIT);
-  buffer[index] = count;
-  osSemaphoreRelease(full_slots_id);
-  index = (index + 1) % BUFFER_SIZE;
-}
-
-void consumer(void* arg) {
-  uint8_t index = 0;
-  while (1) {
-    osSemaphoreAcquire(full_slots_id, osWaitForever);
-    uint8_t item = buffer[index];
-    osSemaphoreRelease(empty_slots_id);
-
-    LEDWrite(LED4 | LED3 | LED2 | LED1, item);
-
-    index = (index + 1) % BUFFER_SIZE;
-
-    osDelay(500);
-  }
-}
+void controller_thread(void* arg);
+void pwm_thread(void* arg);
 
 void main(void) {
   LEDInit(LED1 | LED2 | LED3 | LED4);
-  ButtonInit(USW1);
-  ButtonIntEnable(USW1);
+  // ButtonInit(USW1);
+  // ButtonIntEnable(USW1);
 
   osKernelInitialize();
 
-  consumer_id = osThreadNew(consumer, NULL, NULL);
-
-  // starts with BUFFER_SIZE empty slots
-  empty_slots_id = osSemaphoreNew(BUFFER_SIZE, BUFFER_SIZE, NULL);
-  // starts with 0 full slots
-  full_slots_id = osSemaphoreNew(BUFFER_SIZE, 0, NULL);
+  controller_thread_id = osThreadNew(controller_thread, NULL, NULL);
 
   if (osKernelGetState() == osKernelReady) osKernelStart();
 
   while (1)
     ;
+}
+
+void controller_thread(void* arg) {
+  pwm_thread_ids[0] = osThreadNew(pwm_thread, (void*)LED1, NULL);
+  pwm_thread_ids[1] = osThreadNew(pwm_thread, (void*)LED2, NULL);
+  pwm_thread_ids[2] = osThreadNew(pwm_thread, (void*)LED3, NULL);
+  pwm_thread_ids[3] = osThreadNew(pwm_thread, (void*)LED4, NULL);
+}
+
+void pwm_thread(void* arg) {
+  uint8_t intensity = 0;
+  uint8_t led = (uint8_t)arg;
+  while (1) {
+    LEDOn(led);
+    osThreadYield();
+  }
 }
