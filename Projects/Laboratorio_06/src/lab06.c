@@ -25,6 +25,18 @@ osMessageQueueId_t led2_queue;
 osMessageQueueId_t led3_queue;
 osMessageQueueId_t led4_queue;
 
+const osMutexAttr_t led_mutex_attr = {
+    "LedMutex",                             // human readable mutex name
+    osMutexRecursive | osMutexPrioInherit,  // attr_bits
+    NULL,                                   // memory for control block
+    0U                                      // size for control block
+};
+
+osMutexId_t led1_mutex;
+osMutexId_t led2_mutex;
+osMutexId_t led3_mutex;
+osMutexId_t led4_mutex;
+
 #define QUEUE_MESSAGE_COUNT 8
 #define QUEUE_MESSAGE_SIZE sizeof(uint32_t)
 
@@ -39,6 +51,11 @@ void main(void) {
   // ButtonIntEnable(USW1);
 
   osKernelInitialize();
+
+  led1_mutex = osMutexNew(&led_mutex_attr);
+  led2_mutex = osMutexNew(&led_mutex_attr);
+  led3_mutex = osMutexNew(&led_mutex_attr);
+  led4_mutex = osMutexNew(&led_mutex_attr);
 
   led1_queue = osMessageQueueNew(QUEUE_MESSAGE_COUNT, QUEUE_MESSAGE_SIZE, NULL);
   led2_queue = osMessageQueueNew(QUEUE_MESSAGE_COUNT, QUEUE_MESSAGE_SIZE, NULL);
@@ -71,11 +88,16 @@ void main_thread(void* arg) {
 
 void toggleLed(void* arg) {
   uint32_t led = (uint32_t)arg;
+  if (led == LED1) osMutexAcquire(led1_mutex, osWaitForever);
+  if (led == LED2) osMutexAcquire(led2_mutex, osWaitForever);
+  if (led == LED3) osMutexAcquire(led3_mutex, osWaitForever);
+  if (led == LED4) osMutexAcquire(led4_mutex, osWaitForever);
+
   LEDToggle(led);
 }
 
 void pwm_thread(void* arg_ptr) {
-  uint32_t intensity = 0;
+  uint32_t intensity = 50;
 
   pwm_thread_args_t* arg = (pwm_thread_args_t*)arg_ptr;
 
