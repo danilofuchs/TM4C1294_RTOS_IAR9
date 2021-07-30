@@ -26,7 +26,7 @@ osMessageQueueId_t led3_queue;
 osMessageQueueId_t led4_queue;
 
 #define QUEUE_MESSAGE_COUNT 8
-#define QUEUE_MESSAGE_SIZE 1
+#define QUEUE_MESSAGE_SIZE sizeof(uint32_t)
 
 // void GPIOJ_Handler(void) { ButtonIntClear(USW1); }
 
@@ -66,28 +66,21 @@ void main_thread(void* arg) {
   pwm_thread_args_t led4_args = {.led = LED4, .queue_id = led4_queue};
   led4_thread = osThreadNew(pwm_thread, (void*)&led4_args, NULL);
 
-  // while (1) {
-  // osMessageQueuePut(pwm_controllers[0].queue_id, (void*)1, 0, osWaitForever);
-  // osMessageQueuePut(pwm_controllers[1].queue_id, (void*)1, 0, osWaitForever);
-  // osMessageQueuePut(pwm_controllers[2].queue_id, (void*)1, 0, osWaitForever);
-  // osMessageQueuePut(pwm_controllers[3].queue_id, (void*)1, 0, osWaitForever);
-  // }
-
   osDelay(osWaitForever);
 }
 
 void toggleLed(void* arg) {
-  uint8_t led = (uint8_t)arg;
+  uint32_t led = (uint32_t)arg;
   LEDToggle(led);
 }
 
 void pwm_thread(void* arg_ptr) {
-  uint8_t intensity = 0;
+  uint32_t intensity = 0;
 
   pwm_thread_args_t* arg = (pwm_thread_args_t*)arg_ptr;
 
   uint8_t led = arg->led;
-  // osMessageQueueId_t queue_id = arg->queue_id;
+  osMessageQueueId_t queue_id = arg->queue_id;
 
   uint8_t is_led_on = 0;
 
@@ -97,6 +90,7 @@ void pwm_thread(void* arg_ptr) {
     if (osTimerIsRunning(timer_id)) {
       continue;
     }
+    osStatus_t status = osMessageQueueGet(queue_id, &intensity, NULL, 0);
     uint32_t ticks_on = (PWM_PERIOD * intensity) / 100;
     uint32_t ticks_off = PWM_PERIOD - ticks_on;
     if (is_led_on && ticks_off > 0) {

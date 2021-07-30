@@ -330,7 +330,7 @@
 //     <i> Applies to objects with system provided memory for data storage.
 //     <i> Default: 0
 #ifndef OS_MSGQUEUE_DATA_SIZE
-#define OS_MSGQUEUE_DATA_SIZE       32
+#define OS_MSGQUEUE_DATA_SIZE       128
 #endif
  
 //   </e>
