@@ -5,9 +5,6 @@
 
 osThreadId_t main_thread_id;
 
-#define LED_COUNT 4
-uint8_t leds[LED_COUNT] = {LED1, LED2, LED3, LED4};
-
 #define PWM_PERIOD 10
 
 typedef struct {
