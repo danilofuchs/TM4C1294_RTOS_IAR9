@@ -29,10 +29,7 @@ const osMutexAttr_t led_mutex_attr = {
     0U                                      // size for control block
 };
 
-osMutexId_t led1_mutex;
-osMutexId_t led2_mutex;
-osMutexId_t led3_mutex;
-osMutexId_t led4_mutex;
+osMutexId_t led_mutex;
 
 #define QUEUE_MESSAGE_COUNT 8
 #define QUEUE_MESSAGE_SIZE sizeof(uint32_t)
@@ -47,10 +44,7 @@ void main(void) {
 
   osKernelInitialize();
 
-  led1_mutex = osMutexNew(&led_mutex_attr);
-  led2_mutex = osMutexNew(&led_mutex_attr);
-  led3_mutex = osMutexNew(&led_mutex_attr);
-  led4_mutex = osMutexNew(&led_mutex_attr);
+  led_mutex = osMutexNew(&led_mutex_attr);
 
   led1_queue = osMessageQueueNew(QUEUE_MESSAGE_COUNT, QUEUE_MESSAGE_SIZE, NULL);
   led2_queue = osMessageQueueNew(QUEUE_MESSAGE_COUNT, QUEUE_MESSAGE_SIZE, NULL);
@@ -129,19 +123,6 @@ void main_thread(void* arg) {
   }
 }
 
-void acquire_led_mutex(uint8_t led) {
-  if (led == LED1) osMutexAcquire(led1_mutex, osWaitForever);
-  if (led == LED2) osMutexAcquire(led2_mutex, osWaitForever);
-  if (led == LED3) osMutexAcquire(led3_mutex, osWaitForever);
-  if (led == LED4) osMutexAcquire(led4_mutex, osWaitForever);
-}
-void release_led_mutex(uint8_t led) {
-  if (led == LED1) osMutexRelease(led1_mutex);
-  if (led == LED2) osMutexRelease(led2_mutex);
-  if (led == LED3) osMutexRelease(led3_mutex);
-  if (led == LED4) osMutexRelease(led4_mutex);
-}
-
 void pwm_thread(void* arg_ptr) {
   uint32_t intensity = 0;
 
@@ -160,16 +141,16 @@ void pwm_thread(void* arg_ptr) {
     uint32_t ticks_on = (PWM_PERIOD * intensity) / 100;
     uint32_t ticks_off = PWM_PERIOD - ticks_on;
     if (is_led_on && ticks_off > 0) {
-      acquire_led_mutex(led);
+      osMutexAcquire(led_mutex, osWaitForever);
       LEDOff(led);
       is_led_on = 0;
-      release_led_mutex(led);
+      osMutexRelease(led_mutex);
       osDelayUntil(tick + ticks_off);
     } else if (!is_led_on && ticks_on > 0) {
-      acquire_led_mutex(led);
+      osMutexAcquire(led_mutex, osWaitForever);
       LEDOn(led);
       is_led_on = 1;
-      release_led_mutex(led);
+      osMutexRelease(led_mutex);
       osDelayUntil(tick + ticks_on);
     }
   }
