@@ -15,12 +15,15 @@ typedef struct {
   osMessageQueueId_t queue_id;
 } pwm_thread_args_t;
 
-typedef struct {
-  osThreadId_t thread_id;
-  osMessageQueueId_t queue_id;
-} pwm_controller_t;
+osThreadId_t led1_thread;
+osThreadId_t led2_thread;
+osThreadId_t led3_thread;
+osThreadId_t led4_thread;
 
-pwm_controller_t pwm_controllers[4];
+osMessageQueueId_t led1_queue;
+osMessageQueueId_t led2_queue;
+osMessageQueueId_t led3_queue;
+osMessageQueueId_t led4_queue;
 
 #define QUEUE_MESSAGE_COUNT 8
 #define QUEUE_MESSAGE_SIZE 1
@@ -37,6 +40,11 @@ void main(void) {
 
   osKernelInitialize();
 
+  led1_queue = osMessageQueueNew(QUEUE_MESSAGE_COUNT, QUEUE_MESSAGE_SIZE, NULL);
+  led2_queue = osMessageQueueNew(QUEUE_MESSAGE_COUNT, QUEUE_MESSAGE_SIZE, NULL);
+  led3_queue = osMessageQueueNew(QUEUE_MESSAGE_COUNT, QUEUE_MESSAGE_SIZE, NULL);
+  led4_queue = osMessageQueueNew(QUEUE_MESSAGE_COUNT, QUEUE_MESSAGE_SIZE, NULL);
+
   main_thread_id = osThreadNew(main_thread, NULL, NULL);
 
   if (osKernelGetState() == osKernelReady) osKernelStart();
@@ -46,18 +54,17 @@ void main(void) {
 }
 
 void main_thread(void* arg) {
-  for (int i = 0; i < LED_COUNT; i++) {
-    uint8_t led = leds[i];
+  pwm_thread_args_t led1_args = {.led = LED1, .queue_id = led1_queue};
+  led1_thread = osThreadNew(pwm_thread, (void*)&led1_args, NULL);
 
-    osMessageQueueId_t queue =
-        osMessageQueueNew(QUEUE_MESSAGE_COUNT, QUEUE_MESSAGE_SIZE, NULL);
+  pwm_thread_args_t led2_args = {.led = LED2, .queue_id = led2_queue};
+  led2_thread = osThreadNew(pwm_thread, (void*)&led2_args, NULL);
 
-    pwm_thread_args_t args = {.led = led, .queue_id = queue};
-    pwm_controller_t controller = {
-        .thread_id = osThreadNew(pwm_thread, (void*)&args, NULL),
-        .queue_id = queue,
-    };
-  }
+  pwm_thread_args_t led3_args = {.led = LED3, .queue_id = led3_queue};
+  led3_thread = osThreadNew(pwm_thread, (void*)&led3_args, NULL);
+
+  pwm_thread_args_t led4_args = {.led = LED4, .queue_id = led4_queue};
+  led4_thread = osThreadNew(pwm_thread, (void*)&led4_args, NULL);
 
   // while (1) {
   // osMessageQueuePut(pwm_controllers[0].queue_id, (void*)1, 0, osWaitForever);
