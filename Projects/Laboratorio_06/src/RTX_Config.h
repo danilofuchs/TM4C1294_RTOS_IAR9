@@ -179,7 +179,7 @@
 //     <i> Defines maximum number of objects that can be active at the same time.
 //     <i> Applies to objects with system provided memory for control blocks.
 #ifndef OS_TIMER_NUM
-#define OS_TIMER_NUM                1
+#define OS_TIMER_NUM                4
 #endif
  
 //   </e>
