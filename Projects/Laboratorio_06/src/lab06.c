@@ -86,18 +86,21 @@ void main_thread(void* arg) {
   osDelay(osWaitForever);
 }
 
-void toggleLed(void* arg) {
-  uint32_t led = (uint32_t)arg;
+void acquire_led_mutex(uint8_t led) {
   if (led == LED1) osMutexAcquire(led1_mutex, osWaitForever);
   if (led == LED2) osMutexAcquire(led2_mutex, osWaitForever);
   if (led == LED3) osMutexAcquire(led3_mutex, osWaitForever);
   if (led == LED4) osMutexAcquire(led4_mutex, osWaitForever);
-
-  LEDToggle(led);
+}
+void release_led_mutex(uint8_t led) {
+  if (led == LED1) osMutexRelease(led1_mutex);
+  if (led == LED2) osMutexRelease(led2_mutex);
+  if (led == LED3) osMutexRelease(led3_mutex);
+  if (led == LED4) osMutexRelease(led4_mutex);
 }
 
 void pwm_thread(void* arg_ptr) {
-  uint32_t intensity = 50;
+  uint32_t intensity = 0;
 
   pwm_thread_args_t* arg = (pwm_thread_args_t*)arg_ptr;
 
@@ -106,21 +109,25 @@ void pwm_thread(void* arg_ptr) {
 
   uint8_t is_led_on = 0;
 
-  osTimerId_t timer_id = osTimerNew(toggleLed, osTimerOnce, (void*)led, NULL);
-
   while (1) {
-    if (osTimerIsRunning(timer_id)) {
-      continue;
-    }
-    osStatus_t status = osMessageQueueGet(queue_id, &intensity, NULL, 0);
+    uint32_t tick = osKernelGetTickCount();
+
+    osMessageQueueGet(queue_id, &intensity, NULL, 0);
+
     uint32_t ticks_on = (PWM_PERIOD * intensity) / 100;
     uint32_t ticks_off = PWM_PERIOD - ticks_on;
     if (is_led_on && ticks_off > 0) {
-      osTimerStart(timer_id, ticks_off);
+      acquire_led_mutex(led);
+      LEDOff(led);
       is_led_on = 0;
+      release_led_mutex(led);
+      osDelayUntil(tick + ticks_off);
     } else if (!is_led_on && ticks_on > 0) {
-      osTimerStart(timer_id, ticks_on);
+      acquire_led_mutex(led);
+      LEDOn(led);
       is_led_on = 1;
+      release_led_mutex(led);
+      osDelayUntil(tick + ticks_on);
     }
   }
 }
