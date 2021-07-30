@@ -100,7 +100,7 @@
 //     <i> Defines maximum number of user threads that can be active at the same time.
 //     <i> Applies to user threads with system provided memory for control blocks.
 #ifndef OS_THREAD_NUM
-#define OS_THREAD_NUM               1
+#define OS_THREAD_NUM               6
 #endif
  
 //     <o>Number of user Threads with default Stack size <0-1000>
@@ -322,7 +322,7 @@
 //     <i> Defines maximum number of objects that can be active at the same time.
 //     <i> Applies to objects with system provided memory for control blocks.
 #ifndef OS_MSGQUEUE_NUM
-#define OS_MSGQUEUE_NUM             1
+#define OS_MSGQUEUE_NUM             4
 #endif
  
 //     <o>Data Storage Memory size [bytes] <0-1073741824:8>
@@ -330,7 +330,7 @@
 //     <i> Applies to objects with system provided memory for data storage.
 //     <i> Default: 0
 #ifndef OS_MSGQUEUE_DATA_SIZE
-#define OS_MSGQUEUE_DATA_SIZE       0
+#define OS_MSGQUEUE_DATA_SIZE       32
 #endif
  
 //   </e>
