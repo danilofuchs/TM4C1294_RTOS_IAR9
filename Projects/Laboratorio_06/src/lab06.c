@@ -40,15 +40,13 @@ osMutexId_t led4_mutex;
 #define QUEUE_MESSAGE_COUNT 8
 #define QUEUE_MESSAGE_SIZE sizeof(uint32_t)
 
-// void GPIOJ_Handler(void) { ButtonIntClear(USW1); }
-
 void main_thread(void* arg);
 void pwm_thread(void* arg);
 
 void main(void) {
   LEDInit(LED1 | LED2 | LED3 | LED4);
-  // ButtonInit(USW1);
-  // ButtonIntEnable(USW1);
+  ButtonInit(USW1 | USW2);
+  ButtonIntEnable(USW1 | USW2);
 
   osKernelInitialize();
 
@@ -70,6 +68,30 @@ void main(void) {
     ;
 }
 
+void set_led_intensity(uint8_t led, uint32_t intensity) {
+  if (led == LED1) {
+    osMessageQueuePut(led1_queue, &intensity, 0, 0);
+    osMessageQueuePut(led2_queue, (void*)0, 0, 0);
+    osMessageQueuePut(led3_queue, (void*)0, 0, 0);
+    osMessageQueuePut(led4_queue, (void*)0, 0, 0);
+  } else if (led == LED2) {
+    osMessageQueuePut(led1_queue, (void*)0, 0, 0);
+    osMessageQueuePut(led2_queue, &intensity, 0, 0);
+    osMessageQueuePut(led3_queue, (void*)0, 0, 0);
+    osMessageQueuePut(led4_queue, (void*)0, 0, 0);
+  } else if (led == LED2) {
+    osMessageQueuePut(led1_queue, (void*)0, 0, 0);
+    osMessageQueuePut(led2_queue, (void*)0, 0, 0);
+    osMessageQueuePut(led3_queue, &intensity, 0, 0);
+    osMessageQueuePut(led4_queue, (void*)0, 0, 0);
+  } else if (led == LED2) {
+    osMessageQueuePut(led1_queue, (void*)0, 0, 0);
+    osMessageQueuePut(led2_queue, (void*)0, 0, 0);
+    osMessageQueuePut(led3_queue, (void*)0, 0, 0);
+    osMessageQueuePut(led4_queue, &intensity, 0, 0);
+  }
+}
+
 void main_thread(void* arg) {
   pwm_thread_args_t led1_args = {.led = LED1, .queue_id = led1_queue};
   led1_thread = osThreadNew(pwm_thread, (void*)&led1_args, NULL);
@@ -83,7 +105,31 @@ void main_thread(void* arg) {
   pwm_thread_args_t led4_args = {.led = LED4, .queue_id = led4_queue};
   led4_thread = osThreadNew(pwm_thread, (void*)&led4_args, NULL);
 
-  osDelay(osWaitForever);
+  uint32_t intensity = 0;
+  uint8_t led = LED1;
+
+  while (1) {
+    osThreadFlagsWait(0x01, osFlagsWaitAny, osWaitForever);
+
+    uint8_t is_usw1_pressed = ButtonRead(USW1) & USW1;
+    uint8_t is_usw2_pressed = ButtonRead(USW2) & USW2;
+
+    if (is_usw1_pressed) {
+      if (led == LED1)
+        led = LED2;
+      else if (led == LED2)
+        led = LED3;
+      else if (led == LED3)
+        led = LED4;
+      else if (led == LED4)
+        led = LED1;
+      set_led_intensity(led, intensity);
+    }
+    if (is_usw2_pressed) {
+      intensity = (intensity + 10) % 110;
+      set_led_intensity(led, intensity);
+    }
+  }
 }
 
 void acquire_led_mutex(uint8_t led) {
@@ -130,4 +176,9 @@ void pwm_thread(void* arg_ptr) {
       osDelayUntil(tick + ticks_on);
     }
   }
+}
+
+void GPIOJ_Handler(void) {
+  ButtonIntClear(USW1 | USW2);
+  osThreadFlagsSet(main_thread_id, 0x01);
 }
