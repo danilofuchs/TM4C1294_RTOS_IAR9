@@ -16,3 +16,7 @@ The main thread receives button press events via a Thread Flag set by an Interru
 The LED threads use a Mutex to guarantee critical area access.
 
 [Instructions (Portuguese)](./lab6.pdf)
+
+## Diagram
+
+![](./diagramas/lab06_static_diagram.png)
